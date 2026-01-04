@@ -1,10 +1,10 @@
-public class jogador {
+public class Jogador {
     public String nome;
     public String cor;
     public double saldo;
     public int posicao;
 
-    public jogador(String nome, String cor) {
+    public Jogador(String nome, String cor) {
         this.nome = nome;
         this.cor = cor;
         this.saldo = 1500;
