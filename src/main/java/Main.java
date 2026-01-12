@@ -4,42 +4,43 @@ import java.util.Scanner;
 public class Main {
 
     static ArrayList<String> tabuleiro = new ArrayList<>();
-    static ArrayList<String> cartas = new ArrayList<>(); 
+    static ArrayList<String> cartas = new ArrayList<>();
     static int[] precos = new int[40];
     static int[] alugueis = new int[40];
-    static String[] donos = new String[40]; 
+    static String[] donos = new String[40];
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        
-        inicializarTabuleiroComDadosReais(); 
 
-        System.out.println("--- BANCO IMOBILIÁRIO (PDS - VERSÃO FASE 1) ---");
+        inicializarTabuleiroComDadosReais();
+
+        System.out.println("--- MONOPOLY (PDS - FASE 1) ---");
         System.out.print("Digite o número de jogadores (2-6): ");
         int qtdJogadores = scanner.nextInt();
-        scanner.nextLine(); 
+        scanner.nextLine();
 
-        ArrayList<Jogador> jogadores = new ArrayList<>();
-  
-        String[] cores = {"Branco", "Preto", "Azul", "Amarelo", "Verde", "Vermelho"};
-        
+        ArrayList<Player> jogadores = new ArrayList<>();
+
+        String[] cores = { "Branco", "Preto", "Azul", "Amarelo", "Verde", "Vermelho" };
+
         for (int i = 0; i < qtdJogadores; i++) {
             System.out.print("Nome do jogador " + (i + 1) + ": ");
             String nome = scanner.nextLine();
-            jogadores.add(new Jogador(nome, cores[i % cores.length]));
+            jogadores.add(new Player(nome, cores[i % cores.length]));
         }
 
         // --- GAME LOOP ---
         boolean jogoRolando = true;
         int turno = 0;
-        Dado dado = new Dado();
+        Dice dado = new Dice();
 
         while (jogoRolando) {
-            Jogador jogadorAtual = jogadores.get(turno % jogadores.size());
-            
+            Player jogadorAtual = jogadores.get(turno % jogadores.size());
+
             System.out.println("\n------------------------------------------------");
-            System.out.println("VEZ DE: " + jogadorAtual.nome + " (" + jogadorAtual.cor + ")");
-            System.out.println("Saldo: " + jogadorAtual.saldo + " | Posição Atual: " + tabuleiro.get(jogadorAtual.posicao));
+            System.out.println("VEZ DE: " + jogadorAtual.getName() + " (" + jogadorAtual.getColor() + ")");
+            System.out.println("Saldo: " + jogadorAtual.getBalance() + " | Posição Atual: "
+                    + tabuleiro.get(jogadorAtual.getPosition()));
             System.out.println("[ENTER] para jogar o dado ou digite 'sair'...");
             String input = scanner.nextLine();
 
@@ -47,24 +48,24 @@ public class Main {
                 break;
             }
 
-            int valorDado = dado.jogar() + dado.jogar();
+            int valorDado = dado.roll() + dado.roll();
             System.out.println(">> Dados: " + valorDado);
-            
-            int novaPosicao = (jogadorAtual.posicao + valorDado) % 40;
-            
-            if (novaPosicao < jogadorAtual.posicao) {
+
+            int novaPosicao = (jogadorAtual.getPosition() + valorDado) % 40;
+
+            if (novaPosicao < jogadorAtual.getPosition()) {
                 System.out.println(">> Passou pelo Início! Ganhou $200.");
-                jogadorAtual.saldo += 200;
+                jogadorAtual.credit(200);
             }
-            jogadorAtual.posicao = novaPosicao;
-            
+            jogadorAtual.setPosition(novaPosicao);
+
             String nomeCasa = tabuleiro.get(novaPosicao);
             System.out.println(">> Caiu em: " + nomeCasa + " (" + novaPosicao + ")");
 
             gerenciarCasa(jogadorAtual, novaPosicao, scanner);
 
-            if (jogadorAtual.saldo < 0) {
-                System.out.println("XXX " + jogadorAtual.nome + " FALIU! Fim de jogo. XXX");
+            if (jogadorAtual.getBalance() < 0) {
+                System.out.println("XXX " + jogadorAtual.getName() + " FALIU! Fim de jogo. XXX");
                 jogoRolando = false;
             }
             turno++;
@@ -72,7 +73,7 @@ public class Main {
         scanner.close();
     }
 
-    private static void gerenciarCasa(Jogador jogador, int pos, Scanner scanner) {
+    private static void gerenciarCasa(Player jogador, int pos, Scanner scanner) {
         String nomeLugar = tabuleiro.get(pos);
 
         if (nomeLugar.contains("Sorte")) {
@@ -91,33 +92,33 @@ public class Main {
 
         if (dono == null) {
             System.out.println(">> Propriedade sem dono! Preço: $" + preco);
-            if (jogador.saldo >= preco) {
+            if (jogador.getBalance() >= preco) {
                 System.out.print(">> Deseja comprar " + nomeLugar + "? (s/n): ");
                 String resp = scanner.nextLine();
                 if (resp.equalsIgnoreCase("s")) {
-                    jogador.saldo -= preco;
-                    donos[pos] = jogador.nome;
+                    jogador.debit(preco);
+                    donos[pos] = jogador.getName();
                     System.out.println(">> Compra realizada com sucesso!");
                 }
             } else {
                 System.out.println(">> Saldo insuficiente para comprar.");
             }
-        } else if (!dono.equals(jogador.nome)) {
+        } else if (!dono.equals(jogador.getName())) {
             System.out.println(">> Propriedade de " + dono + "! Pague aluguel de $" + aluguel);
-            jogador.saldo -= aluguel;
+            jogador.debit(aluguel);
 
         } else {
             System.out.println(">> Você já é dono daqui.");
         }
     }
 
-    private static void sacarCarta(Jogador jogadorAtual, Scanner scanner) {
+    private static void sacarCarta(Player jogadorAtual, Scanner scanner) {
         System.out.println(">> Sorte ou Revés! Pressione ENTER para sacar uma carta...");
         scanner.nextLine();
 
         int indiceCarta = (int) (Math.random() * cartas.size());
         String cartaTexto = cartas.get(indiceCarta);
-        
+
         String[] partes = cartaTexto.split("%");
         String descricao = partes[0];
         String acao = partes[1];
@@ -127,25 +128,25 @@ public class Main {
 
         if (acao.equalsIgnoreCase("pague")) {
             System.out.println(">> Você perdeu $" + valor);
-            jogadorAtual.saldo -= valor;
+            jogadorAtual.debit(valor);
         } else if (acao.equalsIgnoreCase("receba") || acao.equalsIgnoreCase("recebe")) {
             System.out.println(">> Você ganhou $" + valor);
-            jogadorAtual.saldo += valor;
+            jogadorAtual.credit(valor);
         } else if (acao.equalsIgnoreCase("vaiParaPrisao")) {
             System.out.println(">> Indo direto para a Prisão!");
-            jogadorAtual.posicao = 10;
+            jogadorAtual.setPosition(10);
         } else if (acao.equalsIgnoreCase("inicio")) {
             System.out.println(">> Avançando para o Ponto de Partida!");
-            jogadorAtual.posicao = 0;
-            jogadorAtual.saldo += 200;
+            jogadorAtual.setPosition(0);
+            jogadorAtual.credit(200);
         } else if (acao.equalsIgnoreCase("presente")) {
             System.out.println(">> É seu aniversário/casamento! Receba $" + valor);
-            jogadorAtual.saldo += valor;
+            jogadorAtual.credit(valor);
         } else {
             System.out.println(">> Ação '" + acao + "' ignorada/não implementada.");
         }
-        
-        System.out.println(">> Novo Saldo: " + jogadorAtual.saldo);
+
+        System.out.println(">> Novo Saldo: " + jogadorAtual.getBalance());
     }
 
     private static void inicializarTabuleiroComDadosReais() {
@@ -170,13 +171,13 @@ public class Main {
         configurarCasa(12, "Sorte ou Revés", 0, 0);
         configurarCasa(13, "Rua Augusta", 180, 14);
         configurarCasa(14, "Av. Pacaembu", 180, 14);
-        configurarCasa(15, "Companhia de Táxi", 150, 40); 
+        configurarCasa(15, "Companhia de Táxi", 150, 40);
         configurarCasa(16, "Sorte ou Revés", 0, 0);
         configurarCasa(17, "Interlagos", 350, 35);
         configurarCasa(18, "Lucros e Dividendos", 0, 0);
         configurarCasa(19, "Morumbi", 400, 50);
         configurarCasa(20, "Parada Livre", 0, 0);
-        configurarCasa(21, "Flamengo", 120, 8); 
+        configurarCasa(21, "Flamengo", 120, 8);
         configurarCasa(22, "Sorte ou Revés", 0, 0);
         configurarCasa(23, "Botafogo", 100, 6);
         configurarCasa(24, "Imposto de Renda", 0, 0);
@@ -187,10 +188,10 @@ public class Main {
         configurarCasa(29, "Jardim Europa", 140, 12);
         configurarCasa(30, "Vá para a Prisão", 0, 0);
         configurarCasa(31, "Copacabana", 260, 22);
-        configurarCasa(32, "Companhia de Aviação", 200, 50); 
+        configurarCasa(32, "Companhia de Aviação", 200, 50);
         configurarCasa(33, "Av. Vieira Souto", 320, 28);
         configurarCasa(34, "Av. Atlântica", 300, 26);
-        configurarCasa(35, "Companhia de Táxi Aéreo", 200, 50); 
+        configurarCasa(35, "Companhia de Táxi Aéreo", 200, 50);
         configurarCasa(36, "Ipanema", 300, 26);
         configurarCasa(37, "Sorte ou Revés", 0, 0);
         configurarCasa(38, "Jardim Paulista", 280, 24);
@@ -214,7 +215,8 @@ public class Main {
         cartas.add("A falta de chuva prejudicou a colheita%pague%45");
         cartas.add("Recebeu uma herança inesperada%receba%75");
         cartas.add("Seu filho decidiu fazer intercâmbio%pague%20");
-        cartas.add("Sua casa será desapropriada para a construção de um metro e ganhará uma gorda indenização%receba%60");
+        cartas.add(
+                "Sua casa será desapropriada para a construção de um metro e ganhará uma gorda indenização%receba%60");
         cartas.add("Venceu licitação para grande obra%receba%150");
         cartas.add("Seu iate afundou, mas você tinha seguro!%receba%25");
         cartas.add("Seus funcionários entraram em greve%pague%30");
