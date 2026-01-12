@@ -11,7 +11,6 @@ public class EstrategiaSorte implements EstrategiaAoCair {
     }
 
     private void inicializarCartas() {
-        // Hardcoded for now, ideal would be to load from file or Factory
         cartas.add("Sua empresa foi multada por poluir demais%pague%200");
         cartas.add("O dia do seu casamento chegou, receba os presentes.%presente%50");
         cartas.add("Reformou sua casa%pague%50");

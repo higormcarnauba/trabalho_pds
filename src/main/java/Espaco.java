@@ -3,12 +3,14 @@ public class Espaco {
     private int preco;
     private int aluguel;
     private Jogador dono;
+    private EstrategiaAoCair estrategia;
 
     public Espaco(String nome) {
         this.nome = nome;
         this.preco = 0;
         this.aluguel = 0;
         this.dono = null;
+        this.estrategia = new EstrategiaVazia();
     }
 
     public Espaco(String nome, int preco, int aluguel) {
@@ -16,6 +18,17 @@ public class Espaco {
         this.preco = preco;
         this.aluguel = aluguel;
         this.dono = null;
+        this.estrategia = new EstrategiaPropriedade();
+    }
+
+    public void setEstrategia(EstrategiaAoCair estrategia) {
+        this.estrategia = estrategia;
+    }
+
+    public void cair(Jogador jogador) {
+        if (estrategia != null) {
+            estrategia.executar(jogador, this);
+        }
     }
 
     public String getNome() {

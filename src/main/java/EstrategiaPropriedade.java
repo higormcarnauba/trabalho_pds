@@ -9,7 +9,6 @@ public class EstrategiaPropriedade implements EstrategiaAoCair {
 
     @Override
     public void executar(Jogador jogador, Espaco espaco) {
-        // Decide which strategy to delegate to based on ownership
         if (espaco.getDono() == null) {
             compra.executar(jogador, espaco);
         } else {

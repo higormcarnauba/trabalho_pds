@@ -19,28 +19,28 @@ public class Main {
         int qtdJogadores = scanner.nextInt();
         scanner.nextLine();
 
-        ArrayList<Player> jogadores = new ArrayList<>();
+        ArrayList<Jogador> jogadores = new ArrayList<>();
 
         String[] cores = { "Branco", "Preto", "Azul", "Amarelo", "Verde", "Vermelho" };
 
         for (int i = 0; i < qtdJogadores; i++) {
             System.out.print("Nome do jogador " + (i + 1) + ": ");
             String nome = scanner.nextLine();
-            jogadores.add(new Player(nome, cores[i % cores.length]));
+            jogadores.add(new Jogador(nome, cores[i % cores.length]));
         }
 
         // --- GAME LOOP ---
         boolean jogoRolando = true;
         int turno = 0;
-        Dice dado = new Dice();
+        Dado dado = new Dado();
 
         while (jogoRolando) {
-            Player jogadorAtual = jogadores.get(turno % jogadores.size());
+            Jogador jogadorAtual = jogadores.get(turno % jogadores.size());
 
             System.out.println("\n------------------------------------------------");
-            System.out.println("VEZ DE: " + jogadorAtual.getName() + " (" + jogadorAtual.getColor() + ")");
-            System.out.println("Saldo: " + jogadorAtual.getBalance() + " | Posição Atual: "
-                    + tabuleiro.get(jogadorAtual.getPosition()));
+            System.out.println("VEZ DE: " + jogadorAtual.getNome() + " (" + jogadorAtual.getCor() + ")");
+            System.out.println("Saldo: " + jogadorAtual.getSaldo() + " | Posição Atual: "
+                    + tabuleiro.get(jogadorAtual.getPosicao()));
             System.out.println("[ENTER] para jogar o dado ou digite 'sair'...");
             String input = scanner.nextLine();
 
@@ -48,24 +48,24 @@ public class Main {
                 break;
             }
 
-            int valorDado = dado.roll() + dado.roll();
+            int valorDado = dado.jogar() + dado.jogar();
             System.out.println(">> Dados: " + valorDado);
 
-            int novaPosicao = (jogadorAtual.getPosition() + valorDado) % 40;
+            int novaPosicao = (jogadorAtual.getPosicao() + valorDado) % 40;
 
-            if (novaPosicao < jogadorAtual.getPosition()) {
+            if (novaPosicao < jogadorAtual.getPosicao()) {
                 System.out.println(">> Passou pelo Início! Ganhou $200.");
-                jogadorAtual.credit(200);
+                jogadorAtual.creditar(200);
             }
-            jogadorAtual.setPosition(novaPosicao);
+            jogadorAtual.setPosicao(novaPosicao);
 
             String nomeCasa = tabuleiro.get(novaPosicao);
             System.out.println(">> Caiu em: " + nomeCasa + " (" + novaPosicao + ")");
 
             gerenciarCasa(jogadorAtual, novaPosicao, scanner);
 
-            if (jogadorAtual.getBalance() < 0) {
-                System.out.println("XXX " + jogadorAtual.getName() + " FALIU! Fim de jogo. XXX");
+            if (jogadorAtual.getSaldo() < 0) {
+                System.out.println("XXX " + jogadorAtual.getNome() + " FALIU! Fim de jogo. XXX");
                 jogoRolando = false;
             }
             turno++;
@@ -73,7 +73,7 @@ public class Main {
         scanner.close();
     }
 
-    private static void gerenciarCasa(Player jogador, int pos, Scanner scanner) {
+    private static void gerenciarCasa(Jogador jogador, int pos, Scanner scanner) {
         String nomeLugar = tabuleiro.get(pos);
 
         if (nomeLugar.contains("Sorte")) {
@@ -92,27 +92,27 @@ public class Main {
 
         if (dono == null) {
             System.out.println(">> Propriedade sem dono! Preço: $" + preco);
-            if (jogador.getBalance() >= preco) {
+            if (jogador.getSaldo() >= preco) {
                 System.out.print(">> Deseja comprar " + nomeLugar + "? (s/n): ");
                 String resp = scanner.nextLine();
                 if (resp.equalsIgnoreCase("s")) {
-                    jogador.debit(preco);
-                    donos[pos] = jogador.getName();
+                    jogador.debitarComValidacao(preco);
+                    donos[pos] = jogador.getNome();
                     System.out.println(">> Compra realizada com sucesso!");
                 }
             } else {
                 System.out.println(">> Saldo insuficiente para comprar.");
             }
-        } else if (!dono.equals(jogador.getName())) {
+        } else if (!dono.equals(jogador.getNome())) {
             System.out.println(">> Propriedade de " + dono + "! Pague aluguel de $" + aluguel);
-            jogador.debit(aluguel);
+            jogador.debitarComValidacao(aluguel);
 
         } else {
             System.out.println(">> Você já é dono daqui.");
         }
     }
 
-    private static void sacarCarta(Player jogadorAtual, Scanner scanner) {
+    private static void sacarCarta(Jogador jogadorAtual, Scanner scanner) {
         System.out.println(">> Sorte ou Revés! Pressione ENTER para sacar uma carta...");
         scanner.nextLine();
 
@@ -128,25 +128,25 @@ public class Main {
 
         if (acao.equalsIgnoreCase("pague")) {
             System.out.println(">> Você perdeu $" + valor);
-            jogadorAtual.debit(valor);
+            jogadorAtual.debitarComValidacao(valor);
         } else if (acao.equalsIgnoreCase("receba") || acao.equalsIgnoreCase("recebe")) {
             System.out.println(">> Você ganhou $" + valor);
-            jogadorAtual.credit(valor);
+            jogadorAtual.creditar(valor);
         } else if (acao.equalsIgnoreCase("vaiParaPrisao")) {
             System.out.println(">> Indo direto para a Prisão!");
-            jogadorAtual.setPosition(10);
+            jogadorAtual.setPosicao(10);
         } else if (acao.equalsIgnoreCase("inicio")) {
             System.out.println(">> Avançando para o Ponto de Partida!");
-            jogadorAtual.setPosition(0);
-            jogadorAtual.credit(200);
+            jogadorAtual.setPosicao(0);
+            jogadorAtual.creditar(200);
         } else if (acao.equalsIgnoreCase("presente")) {
             System.out.println(">> É seu aniversário/casamento! Receba $" + valor);
-            jogadorAtual.credit(valor);
+            jogadorAtual.creditar(valor);
         } else {
             System.out.println(">> Ação '" + acao + "' ignorada/não implementada.");
         }
 
-        System.out.println(">> Novo Saldo: " + jogadorAtual.getBalance());
+        System.out.println(">> Novo Saldo: " + jogadorAtual.getSaldo());
     }
 
     private static void inicializarTabuleiroComDadosReais() {
